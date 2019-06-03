@@ -1,0 +1,5 @@
+{
+	"prefixjunk":"\r\n",
+	"suffixjunk":"",
+	"parseformat":"%n:%e:%J:%J:%J:%J:%J:%J:%J:%h:%s\r\n"
+}

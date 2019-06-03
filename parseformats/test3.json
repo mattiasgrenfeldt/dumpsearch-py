@@ -1,0 +1,5 @@
+{
+	"prefixjunk":"",
+	"suffixjunk":"\\.\n\n\n",
+	"parseformat":"%J\t%n\t%e\t%h\t%J\n"
+}
