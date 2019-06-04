@@ -1,5 +1,5 @@
 {
-	"prefixjunk":"current_role\n",
+	"prefixjunk":"current_role\r\n",
 	"suffixjunk":"",
-	"parseformat":"%J,%h,%n,%J\n"
+	"parseformat":"%J,%h,%n,%J\r\n"
 }

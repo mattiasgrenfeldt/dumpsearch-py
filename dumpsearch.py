@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import sys, json, os, progressbar, argparse
+import sys, json, os, progressbar, argparse, re
 
 # Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
-PARAMS = "enphstflmdJ"
+PARAMS = "enphstflmd"
+JUNK_PARAM = 'J'
 
 '''
 
@@ -33,31 +34,23 @@ class ParseFormat(object):
             self.suffixJunk = b"\x00"*5
         
         f = parseObject["parseformat"]
+        positions = [x.start() for x in list(re.finditer("(^|[^%])%[" + PARAMS + JUNK_PARAM + "]", f))]
+        positions = [x + 1 if x != 0 else x for x in positions]
         self.formatIsVar = []
         self.format = []
-        i = 0
-        while i < len(f):
-            if f[i] == '%':
-                if i == len(f)-1:
-                    print("[ERROR] Parse format can't end in %. Did you mean %%?")
-                    sys.exit(1)
-                elif f[i+1] == '%':
-                    i += 1
-                else:
-                    if f[:i] != "":
-                        self.format.append(f[:i].replace("%%", '%').encode())
-                        self.formatIsVar.append(False)
-                    assert f[i+1] in PARAMS, "[ERROR] Uknown parse format paramter: %s" % f[i:i+2]
-                    self.format.append(f[i:i+2].encode())
-                    self.formatIsVar.append(True)
-                    f = f[i+2:]
-                    i = 0
-                    continue
-            i += 1
-        if f != "":
-            self.format.append(f.replace("%%", '%').encode())
+        
+        lastPos = 0
+        for p in positions:
+            self.format.append(f[lastPos:p].encode())
             self.formatIsVar.append(False)
-        assert not self.formatIsVar[-1], "[ERROR] Parse format must end in delimeter. Did you want '\\n' at the end?"
+            self.format.append(f[p:p+2].encode())
+            self.formatIsVar.append(True)
+            lastPos = p + 2
+        self.format.append(f[lastPos:].encode())
+        self.formatIsVar.append(False)
+        if self.format[0] == b"":
+            self.format = self.format[1:]
+            self.formatIsVar = self.formatIsVar[1:]
 
     def __str__(self):
         return b"".join(self.format).decode().strip()
@@ -83,6 +76,7 @@ class Parser(object):
         barCounter = 0
 
         buff = self.readChunk(file)
+
         buffPos = buff.find(self.parseFormat.prefixJunk) + len(self.parseFormat.prefixJunk)
         suffixPos = buff.find(self.parseFormat.suffixJunk, buffPos)
 
@@ -122,17 +116,17 @@ def main():
     parser.add_argument('inpath', help="Path to either a file or a folder of files to parse.")
     parser.add_argument('outfile')
     parser.add_argument('dumpname')
-    parser.add_argument('--ext', help="Extension of dump files in folder. Default: .txt")
+    parser.add_argument('--ext', default=".txt", help="Extension of dump files in folder. Default: .txt")
     args = parser.parse_args()
     print(args)
 
     p = Parser(args.formatfile, args.outfile)
     print("Format:", p.parseFormat)
-
+    
     if os.path.isfile(args.inpath):
         p.parseFile(args.inpath, args.dumpname)
     elif os.path.isdir(args.inpath):
-        p.parseFolder(args.inpath, args.dumpname)
+        p.parseFolder(args.inpath, args.dumpname, args.ext)
     else:
         print("Uknown inpath:", args.inpath)
         sys.exit(1)
