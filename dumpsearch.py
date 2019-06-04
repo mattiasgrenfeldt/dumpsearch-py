@@ -6,7 +6,6 @@ PARAMS = "enphstflmd"
 JUNK_PARAM = 'J'
 
 '''
-
 parameters:
 email %e
 username %n
@@ -21,7 +20,6 @@ dump %d
 
 other:
 birthdate %b
-
 '''
 
 class ParseFormat(object):
@@ -51,6 +49,9 @@ class ParseFormat(object):
         if self.format[0] == b"":
             self.format = self.format[1:]
             self.formatIsVar = self.formatIsVar[1:]
+        if not self.formatIsVar[0]:
+            self.format = ["%" + JUNK_PARAM] + self.format
+            self.formatIsVar = [True] + self.format
 
     def __str__(self):
         return b"".join(self.format).decode().strip()
@@ -58,6 +59,7 @@ class ParseFormat(object):
 class Parser(object):
     def __init__(self, formatFileName, outFileName):
         self.chunkSize = int(1e6)
+        self.refillThreshold = self.chunkSize//10
         self.outFile = open(outFileName, "ab")
         self.parseFormat = ParseFormat(formatFileName)
 
@@ -68,7 +70,7 @@ class Parser(object):
         return file.read(self.chunkSize)
 
     # Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
-    def parseFile(self, fileName, dump):
+    def parseFile(self, fileName, dumpName):
         print("[*] Parsing: %s" % fileName)
         file = open(fileName, "rb")
         fileSize = os.stat(fileName).st_size
@@ -81,34 +83,49 @@ class Parser(object):
         suffixPos = buff.find(self.parseFormat.suffixJunk, buffPos)
 
         fmt = self.parseFormat.format
+        dumpName = dumpName.encode()
         while len(buff) and buffPos != suffixPos:
-            info = {"d":dump.encode()}
+            info = {"d":dumpName}
 
-            startIndex = 0
-            if not self.parseFormat.formatIsVar[0]:
-                startIndex = 1
-                buffPos = buff.find(fmt[0], buffPos) + len(fmt[0])
+            endOfLinePos = buff.find(fmt[-1], buffPos)
+            if endOfLinePos == -1:
+                print("[WARN] Can't find next end of line. Stopping parsing.")
+                bar.finish()
+                return False
+            endOfLinePos += len(fmt[-1])
 
-            for i in range(startIndex, len(fmt), 2):
-                delimPos = buff.find(fmt[i+1], buffPos)
+            for i in range(0, len(fmt), 2):
+                delim = fmt[i+1]
+                delimPos = buff.find(delim, buffPos, endOfLinePos)
+                if delimPos == -1:
+                    print("[ERROR] Can't find next delimeter. Stopping parsing.")
+                    bar.finish()
+                    return False
                 info[chr(fmt[i][1])] = buff[buffPos:delimPos]
-                buffPos = delimPos + len(fmt[i+1])
+                buffPos = delimPos + len(delim)
 
-            self.outFile.write(b':'.join([info.get(x, b"") for x in PARAMS[:-1]]) + b"\n")
+            self.outFile.write(b':'.join([info.get(x, b"").strip() for x in PARAMS]) + b"\n")
 
-            if len(buff) - buffPos < self.chunkSize//10:
+            if len(buff) - buffPos < self.refillThreshold:
                 barCounter += buffPos
                 bar.update(barCounter)
                 buff = buff[buffPos:] + self.readChunk(file)
                 buffPos = 0
                 suffixPos = buff.find(self.parseFormat.suffixJunk)
+        bar.finish()
+        return True
 
     def parseFolder(self, folderName, dump, ext='.txt'):
         files = os.listdir(folderName)
         files = [f for f in files if f.endswith(ext)]
         print("[*] Parsing %d files." % len(files))
+        errorFiles = []
         for f in files:
-            self.parseFile(os.path.join(folderName, f), dump)
+            if not self.parseFile(os.path.join(folderName, f), dump):
+                errorFiles.append(f)
+        if len(errorFiles):
+            print("[ERROR] Problems were found while parsing the following files:")
+            print(errorFiles)
 
 def main():
     parser = argparse.ArgumentParser(description='Parse and search through datadumps.')
@@ -118,7 +135,6 @@ def main():
     parser.add_argument('dumpname')
     parser.add_argument('--ext', default=".txt", help="Extension of dump files in folder. Default: .txt")
     args = parser.parse_args()
-    print(args)
 
     p = Parser(args.formatfile, args.outfile)
     print("Format:", p.parseFormat)
