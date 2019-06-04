@@ -1,5 +1,7 @@
 {
 	"prefixjunk":"current_role\r\n",
 	"suffixjunk":"",
-	"parseformat":"%J,%h,%n,%J\r\n"
+	"delimiter":",",
+	"linedelimiter":"\r\n",
+	"parseformat":"JhnJ"
 }

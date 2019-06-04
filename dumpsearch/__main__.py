@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys, os, argparse, re
 import parser as prs
+import parseformat, guesser
 # Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
 
 '''
@@ -29,7 +30,13 @@ def main():
     parser.add_argument('--ext', default=".txt", help="Extension of dump files in folder. Default: .txt")
     args = parser.parse_args()
 
-    p = prs.Parser(args.formatfile, args.outfile)
+    '''
+    g = guessformat.Guesser()
+    fmt = g.guessFormat()
+    '''
+
+    parseFormat = parseformat.ParseFormat.loadFromFile(args.formatfile)
+    p = prs.Parser(parseFormat, args.outfile)
     print("Format:", p.parseFormat)
     
     if os.path.isfile(args.inpath):

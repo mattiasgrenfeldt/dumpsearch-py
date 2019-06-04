@@ -1,5 +1,7 @@
 {
 	"prefixjunk":"",
 	"suffixjunk":"",
-	"parseformat":"%e:%h\r\n"
+	"delimiter":":",
+	"linedelimiter":"\r\n",
+	"parseformat":"eh"
 }

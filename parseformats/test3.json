@@ -1,5 +1,7 @@
 {
 	"prefixjunk":"",
 	"suffixjunk":"\\.\n\n\n",
-	"parseformat":"%J\t%n\t%e\t%h\t%J\n"
+	"delimiter":"\t",
+	"linedelimiter":"\n",
+	"parseformat":"JnehJJJJJJJJJJJJJJJJJJJJJ"
 }

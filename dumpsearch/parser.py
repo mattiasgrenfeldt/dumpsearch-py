@@ -1,17 +1,12 @@
 import os, progressbar
 import parseformat
 
-class Parser(object):
-    PARAMS = "enphstflmd"
-    JUNK_PARAM = 'J'
-    DELIMITERS = ":;,| \t"
-    LINE_DELIMITERS = ["\n", "\r\n"]
-    
-    def __init__(self, formatFileName, outFileName):
+class Parser(object):    
+    def __init__(self, parseFormat, outFileName):
         self.chunkSize = int(1e6)
         self.refillThreshold = self.chunkSize//10
         self.outFile = open(outFileName, "ab")
-        self.parseFormat = parseformat.ParseFormat(formatFileName, Parser.PARAMS, Parser.JUNK_PARAM)
+        self.parseFormat = parseFormat
 
     def __del__(self):
         self.outFile.close()
@@ -19,7 +14,6 @@ class Parser(object):
     def readChunk(self, file):
         return file.read(self.chunkSize)
 
-    # Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
     def parseFile(self, fileName, dumpName):
         print("[*] Parsing: %s" % fileName)
         file = open(fileName, "rb")
@@ -35,26 +29,24 @@ class Parser(object):
         fmt = self.parseFormat.format
         dumpName = dumpName.encode()
         while len(buff) and buffPos != suffixPos:
-            info = {"d":dumpName}
 
-            endOfLinePos = buff.find(fmt[-1], buffPos)
+            endOfLinePos = buff.find(self.parseFormat.lineDelimiter, buffPos)
             if endOfLinePos == -1:
                 print("[WARN] Can't find next end of line. Stopping parsing.")
                 bar.finish()
+                file.close()
                 return False
-            endOfLinePos += len(fmt[-1])
 
-            for i in range(0, len(fmt), 2):
-                delim = fmt[i+1]
-                delimPos = buff.find(delim, buffPos, endOfLinePos)
-                if delimPos == -1:
-                    print("[ERROR] Can't find next delimeter. Stopping parsing.")
-                    bar.finish()
-                    return False
-                info[chr(fmt[i][1])] = buff[buffPos:delimPos]
-                buffPos = delimPos + len(delim)
+            line = buff[buffPos:endOfLinePos]
+            values = line.split(self.parseFormat.delimiter)
+            if len(values) != len(self.parseFormat.format):
+                print("[ERROR] Line has %d fields, expected %d. Bad line!" % (len(values), len(self.parseFormat.format)))
+            else:
+                info = {k:v for (k,v) in zip(self.parseFormat.format.decode(), values)}
+                info['d'] = dumpName
+                self.outFile.write(b':'.join([info.get(x, b"").strip() for x in parseformat.ParseFormat.PARAMS]) + b"\n")
 
-            self.outFile.write(b':'.join([info.get(x, b"").strip() for x in Parser.PARAMS]) + b"\n")
+            buffPos = endOfLinePos + len(self.parseFormat.lineDelimiter)
 
             if len(buff) - buffPos < self.refillThreshold:
                 barCounter += buffPos
@@ -62,6 +54,7 @@ class Parser(object):
                 buff = buff[buffPos:] + self.readChunk(file)
                 buffPos = 0
                 suffixPos = buff.find(self.parseFormat.suffixJunk)
+        file.close()
         bar.finish()
         return True
 
