@@ -10,19 +10,21 @@ class ParseFormat(object):
         self.delimiter = formatDict.get("delimiter", "").encode()
         self.lineDelimiter = formatDict.get("linedelimiter", "").encode()
         self.format = formatDict.get("parseformat", "").encode()
-        if self.suffixJunk == b"":
-            self.suffixJunk = b"\x00"*5
+
+    def toJSON(self):
+        data = {
+            "prefixjunk" : self.prefixJunk.decode(),
+            "suffixjunk" : self.suffixJunk.decode(),
+            "delimiter" : self.delimiter.decode(),
+            "linedelimiter" : self.lineDelimiter.decode(),
+            "parseformat" : self.format.decode()
+        }
+        return data
+
 
     def saveToFile(self, fileName):
         with open(fileName, 'wb') as f:
-            data = {
-                "prefixjunk" : self.prefixJunk,
-                "suffixjunk" : self.suffixJunk,
-                "delimiter" : self.delimiter,
-                "lineDelimiter" : self.lineDelimiter,
-                "parseformat" : self.format
-            }
-            f.write(json.dumps(data))
+            f.write(json.dumps(self.toJSON()).encode())
 
     @staticmethod
     def loadFromFile(fileName):

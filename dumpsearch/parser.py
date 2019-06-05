@@ -24,7 +24,8 @@ class Parser(object):
         buff = self.readChunk(file)
 
         buffPos = buff.find(self.parseFormat.prefixJunk) + len(self.parseFormat.prefixJunk)
-        suffixPos = buff.find(self.parseFormat.suffixJunk, buffPos)
+        suffixJunk = self.parseFormat.suffixJunk if self.parseFormat.suffixJunk != b"" else b"\x00"*10
+        suffixPos = buff.find(suffixJunk, buffPos)
 
         fmt = self.parseFormat.format
         dumpName = dumpName.encode()
@@ -53,7 +54,7 @@ class Parser(object):
                 bar.update(barCounter)
                 buff = buff[buffPos:] + self.readChunk(file)
                 buffPos = 0
-                suffixPos = buff.find(self.parseFormat.suffixJunk)
+                suffixPos = buff.find(suffixJunk)
         file.close()
         bar.finish()
         return True
