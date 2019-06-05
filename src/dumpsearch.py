@@ -3,19 +3,18 @@ import sys, argparse, os
 import os.path as path
 import parser as prs
 import parseformat, guesser
-# Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
 
 '''
 parameters:
 email %e
-username %n
+username %u
 password %p
 hash %h
 salt %s
 hashtype %t
 firstname %f
 lastname %l
-phone %m
+phone %n
 dump %d
 
 other:

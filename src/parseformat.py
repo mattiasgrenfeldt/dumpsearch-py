@@ -1,7 +1,7 @@
 import json
 
 class ParseFormat(object):
-    PARAMS = "enphstflmd"
+    PARAMS = "euphstflmd"
     JUNK_PARAM = 'J'
 
     def __init__(self, formatDict):
