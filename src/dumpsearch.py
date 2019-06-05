@@ -4,23 +4,6 @@ import os.path as path
 import parser as prs
 import parseformat, guesser
 
-'''
-parameters:
-email %e
-username %u
-password %p
-hash %h
-salt %s
-hashtype %t
-firstname %f
-lastname %l
-phone %n
-dump %d
-
-other:
-birthdate %b
-'''
-
 def parse():
     parser = argparse.ArgumentParser(description='Parse datadumps.')
     parser.add_argument('formatfile', help="File containing parser format.")

@@ -20,7 +20,8 @@ class Parser(object):
     def parseFile(self, fileName, dumpName, junkFolder):
         print("[*] Parsing: %s" % fileName)
         file = open(fileName, "rb")
-        junkFile = open("%s.junk" % path.join(junkFolder, path.basename(path.abspath(fileName))), "wb")
+        junkFileName = "%s.junk" % path.join(junkFolder, path.basename(path.abspath(fileName)))
+        junkFile = open(junkFileName, "wb")
         fileSize = os.stat(fileName).st_size
         bar = progressbar.ProgressBar(max_value=fileSize)
         barCounter = 0
@@ -70,7 +71,11 @@ class Parser(object):
         
         bar.finish()
         file.close()
-        junkFile.close()
+        if junkFile.tell() == 0:
+            junkFile.close()
+            os.unlink(junkFileName)
+        else:
+            junkFile.close()
         if lineError:
             print("[WARN] Line errors occured, check junk file.")
         if emailError:
