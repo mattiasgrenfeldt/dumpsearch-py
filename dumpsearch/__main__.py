@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import sys, ntpath, argparse
+import sys, argparse, os
+import os.path as path
 import parser as prs
 import parseformat, guesser
 # Outformat: %e:%n:%p:%h:%s:%t:%f:%l:%m:%d\n
@@ -26,20 +27,25 @@ def parse():
     parser.add_argument('formatfile', help="File containing parser format.")
     parser.add_argument('inpath', help="Path to either a file or a folder of files to parse.")
     parser.add_argument('outfile')
-    parser.add_argument('--dumpname', default=None, help="Specify dumpname to be saved in database.")
-    parser.add_argument('--ext', default=".txt", help="Extension of dump files in folder. Default: .txt")
+    parser.add_argument('-d', '--dumpname', default=None, help="Specify dumpname to be saved in database.")
+    parser.add_argument('-e', '--ext', default=".txt", help="Extension of dump files in folder. Default: .txt")
+    parser.add_argument('-j', '--junkfolder', default="junk", help="Where to dump parsing junk. Default: junk")
     args = parser.parse_args(sys.argv[2:])
 
     parseFormat = parseformat.ParseFormat.loadFromFile(args.formatfile)
     p = prs.Parser(parseFormat, args.outfile)
     print("Format:", p.parseFormat)
     
-    dumpname = args.dumpname if args.dumpname != None else ntpath.basename(ntpath.abspath(args.inpath))
+    dumpname = args.dumpname if args.dumpname != None else path.basename(path.abspath(args.inpath))
+    try:
+        os.mkdir(args.junkfolder)
+    except FileExistsError as e:
+        pass
 
-    if ntpath.isfile(args.inpath):
-        p.parseFile(args.inpath, dumpname)
-    elif ntpath.isdir(args.inpath):
-        p.parseFolder(args.inpath, dumpname, args.ext)
+    if path.isfile(args.inpath):
+        p.parseFile(args.inpath, dumpname, args.junkfolder)
+    elif path.isdir(args.inpath):
+        p.parseFolder(args.inpath, dumpname, args.junkfolder, args.ext)
     else:
         print("Uknown inpath:", args.inpath)
         sys.exit(1)

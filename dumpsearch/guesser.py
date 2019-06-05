@@ -1,8 +1,10 @@
-import os, sys
+import os, sys, re
 import parseformat
 
 class Guesser(object):
     DELIMITERS = ":;,| \t"
+    EMAIL_REGEX = b"[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
+    HASH_REGEX = b"[a-z0-9]+[a-z][0-9][a-z0-9]+"
 
     def __init__(self):
         pass
@@ -35,7 +37,7 @@ class Guesser(object):
 
         delim = chr(bestDelim[-1][1]).encode()
         numOfParams = {}
-        for line in buff[1:]:
+        for line in buff:
             count = line.count(delim) + 1
             if count not in numOfParams:
                 numOfParams[count] = 0
@@ -46,7 +48,17 @@ class Guesser(object):
             print('\n'.join(list(map(repr, numOfParams.items()))))
             print("Using", numberOfParamters, "columns\n")
         fmt["delimiter"] = delim.decode()
-        fmt["parseformat"] = "J"*numberOfParamters
+
+        # Guess parameter positions
+        parameterFormat = ['J']*numberOfParamters
+        index = self.guessParamter(buff, delim, numberOfParamters, Guesser.EMAIL_REGEX)
+        if index != -1:
+            parameterFormat[index] = 'e'
+        index = self.guessParamter(buff, delim, numberOfParamters, Guesser.HASH_REGEX)
+        if index != -1:
+            parameterFormat[index] = 'h'
+        fmt["parseformat"] = ''.join(parameterFormat)
+
 
         # find prefixjunk
         file.seek(0)
@@ -72,6 +84,18 @@ class Guesser(object):
         if outFile != None:
             pf.saveToFile(outFile)
         return pf
+
+    def guessParamter(self, buff, delim, numberOfParamters, regex):
+        bestPos = [[0, i] for i in range(numberOfParamters)]
+        for line in buff:
+            params = line.split(delim)
+            if len(params) == numberOfParamters:
+                for i in range(numberOfParamters):
+                    if re.fullmatch(regex, params[i]) != None:
+                        bestPos[i][0] += 1
+        bestPos.sort()
+        bestPos = bestPos[-1][1] if bestPos[-1][0] != 0 else -1
+        return bestPos
 
     def lineFollowsFormat(self, line, delim, numberOfParamters):
         return (line.count(delim) + 1) == numberOfParamters
