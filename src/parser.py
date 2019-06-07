@@ -6,7 +6,7 @@ class Parser(object):
     EMAIL_REGEX = b"[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
 
     def __init__(self, parseFormat, exporter):
-        self.chunkSize = int(1e6)
+        self.chunkSize = int(5e6)
         self.refillThreshold = self.chunkSize//10
         self.parseFormat = parseFormat
         self.exporter = exporter
@@ -32,11 +32,13 @@ class Parser(object):
         emailError = False
         lineError = False
 
+        dataEntries = []
         fmt = self.parseFormat.format
         dumpName = dumpName.encode()
         while len(buff) and buffPos != suffixPos:
             endOfLinePos = buff.find(self.parseFormat.lineDelimiter, buffPos)
             if endOfLinePos == -1:
+                self.exporter.exportEntries(dataEntries)
                 bar.finish()
                 print("[WARN] Can't find next end of line. Stopping parsing.")
                 file.close()
@@ -55,17 +57,20 @@ class Parser(object):
                     emailError = True
                     junkFile.write(b"%s\n" % line)
                 else:
-                    self.exporter.exportEntry(info)
+                    dataEntries.append(info)
 
             buffPos = endOfLinePos + len(self.parseFormat.lineDelimiter)
 
             if len(buff) - buffPos < self.refillThreshold:
+                self.exporter.exportEntries(dataEntries)
+                dataEntries = []
                 barCounter += buffPos
                 bar.update(barCounter)
                 buff = buff[buffPos:] + self.readChunk(file)
                 buffPos = 0
                 suffixPos = buff.find(suffixJunk)
         
+        self.exporter.exportEntries(dataEntries)
         bar.finish()
         file.close()
         if junkFile.tell() == 0:

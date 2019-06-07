@@ -50,5 +50,26 @@ class DBConnection(exporter.Exporter):
         self.collection.insert_one(newEntry)
 
     def exportEntries(self, entryList):
-        raise NotImplementedError("Implement in subclass")
+        if not len(entryList):
+            return
+        translation = {
+            'e':"email",
+            'u':"username",
+            'p':"password",
+            'h':"hash",
+            's':"salt",
+            't':"hashtype",
+            'f':"firstname",
+            'l':"lastname",
+            'n':"phone",
+            'd':"dumpsource",
+        }
+        entries = []
+        for entry in entryList:
+            newEntry = {}
+            for k,v in translation.items():
+                if k in entry:
+                    newEntry[v] = entry[k].decode()
+            entries.append(newEntry)
+        self.collection.insert_many(entries)
         

@@ -15,7 +15,6 @@ def parse():
     parser.add_argument('-j', '--junkfolder', default="junk", help="Where to dump parsing junk. Default: junk")
     args = parser.parse_args(sys.argv[2:])
 
-
     if args.outfile != None and args.config != None:
         print("[ERROR] You have to specify either a DB config file (-c) or an outfile (-o). Not both.")
         sys.exit(1)
