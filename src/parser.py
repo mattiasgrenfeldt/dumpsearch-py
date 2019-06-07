@@ -87,7 +87,8 @@ class Parser(object):
         files = [f for f in files if f.endswith(ext)]
         print("[*] Parsing %d files." % len(files))
         errorFiles = []
-        for f in files:
+        for (i,f) in enumerate(files):
+            print("[*] File %d of %d." % (i, len(files)))
             if not self.parseFile(path.join(folderName, f), dumpName, junkFolder):
                 errorFiles.append(f)
         if len(errorFiles):
