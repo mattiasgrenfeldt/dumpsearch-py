@@ -7,6 +7,7 @@ verify_ssl = true
 
 [packages]
 progressbar2 = "*"
+pymongo = "*"
 
 [requires]
 python_version = "3.6"

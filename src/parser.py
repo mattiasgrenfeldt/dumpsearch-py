@@ -5,14 +5,11 @@ import parseformat
 class Parser(object):
     EMAIL_REGEX = b"[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
 
-    def __init__(self, parseFormat, outFileName):
+    def __init__(self, parseFormat, exporter):
         self.chunkSize = int(1e6)
         self.refillThreshold = self.chunkSize//10
-        self.outFile = open(outFileName, "ab")
         self.parseFormat = parseFormat
-
-    def __del__(self):
-        self.outFile.close()
+        self.exporter = exporter
 
     def readChunk(self, file):
         return file.read(self.chunkSize)
@@ -58,7 +55,7 @@ class Parser(object):
                     emailError = True
                     junkFile.write(b"%s\n" % line)
                 else:
-                    self.outFile.write(b':'.join([info.get(x, b"").strip() for x in parseformat.ParseFormat.PARAMS]) + b"\n")
+                    self.exporter.exportEntry(info)
 
             buffPos = endOfLinePos + len(self.parseFormat.lineDelimiter)
 

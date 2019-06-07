@@ -45,7 +45,7 @@ The `parseformat` field has the following parameters:
 | f | **F**irstname |
 | l | **L**astname |
 | n | pho**n**e |
-| d | **D**ump |
+| d | **D**umpsource |
 | J | **J**unk |
 
 To parse a dump run:
@@ -59,3 +59,5 @@ The program will currently dump the data to `outfile.txt` in the following forma
 ```
 e:u:p:h:s:t:f:l:n:d\n
 ```
+
+TODO: describe mysqlconfig.json

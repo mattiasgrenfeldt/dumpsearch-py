@@ -1,8 +1,9 @@
 import json
 
+PARAMS = "euphstflmd"
+JUNK_PARAM = 'J'
+
 class ParseFormat(object):
-    PARAMS = "euphstflmd"
-    JUNK_PARAM = 'J'
 
     def __init__(self, formatDict):
         self.prefixJunk = formatDict.get("prefixjunk", "").encode()
