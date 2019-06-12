@@ -3,7 +3,7 @@ import os.path as path
 import parseformat
 
 class Parser(object):
-    EMAIL_REGEX = "[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
+    EMAIL_REGEX = "[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~.]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
 
     def __init__(self, parseFormat, exporter):
         self.chunkSize = int(5e6)
