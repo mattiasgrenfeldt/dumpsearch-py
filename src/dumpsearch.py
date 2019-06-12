@@ -30,6 +30,9 @@ def parse():
     print("Format:", p.parseFormat)
     
     dumpname = args.dumpname if args.dumpname != None else path.basename(path.abspath(args.inpath))
+    if dumpname.find("junk") != -1:
+        print("[ERROR Junk found in dumpname. Did you really want this? Specify a specific dumpname with -d")
+        sys.exit(1)
     try:
         os.mkdir(args.junkfolder)
     except FileExistsError as e:
@@ -43,6 +46,7 @@ def parse():
         print("Uknown inpath:", args.inpath)
         sys.exit(1)
     del p
+    print("[*] Dumpname:", dumpname)
 
 def guess():
     parser = argparse.ArgumentParser(description='Guess parse format.')

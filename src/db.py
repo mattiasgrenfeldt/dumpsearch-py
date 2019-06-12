@@ -16,60 +16,11 @@ class DBConnection(exporter.Exporter):
     def buildIndexes(self):
         pass
 
-    '''
-    | e | **E**mail |
-    | u | **U**sername |
-    | p | **P**assword |
-    | h | **H**ash |
-    | s | **S**alt |
-    | t | hash**T**ype |
-    | f | **F**irstname |
-    | l | **L**astname |
-    | n | pho**n**e |
-    | d | **D**umpsource |
-    | J | **J**unk |
-    '''
     def exportEntry(self, entry):
-        #TODO: Change this
-        translation = {
-            'e':"email",
-            'u':"username",
-            'p':"password",
-            'h':"hash",
-            's':"salt",
-            't':"hashtype",
-            'f':"firstname",
-            'l':"lastname",
-            'n':"phone",
-            'd':"dumpsource",
-        }
-        newEntry = {}
-        for k,v in translation.items():
-            if k in entry:
-                newEntry[v] = entry[k].decode()
-        self.collection.insert_one(newEntry)
+        self.collection.insert_one(entry)
 
     def exportEntries(self, entryList):
         if not len(entryList):
             return
-        translation = {
-            'e':"email",
-            'u':"username",
-            'p':"password",
-            'h':"hash",
-            's':"salt",
-            't':"hashtype",
-            'f':"firstname",
-            'l':"lastname",
-            'n':"phone",
-            'd':"dumpsource",
-        }
-        entries = []
-        for entry in entryList:
-            newEntry = {}
-            for k,v in translation.items():
-                if k in entry:
-                    newEntry[v] = entry[k].decode()
-            entries.append(newEntry)
-        self.collection.insert_many(entries)
+        self.collection.insert_many(entryList)
         

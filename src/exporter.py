@@ -18,7 +18,7 @@ class FileExporter(Exporter):
         self.outFile.close()
 
     def exportEntry(self, entry):
-        self.outFile.write(b':'.join([entry.get(x, b"").strip() for x in parseformat.PARAMS]) + b"\n")
+        self.outFile.write(b':'.join([entry.get(x, "").strip().encode() for x in parseformat.PARAMS_EXTENDED]) + b"\n")
 
     def exportEntries(self, entryList):
         for entry in entryList:

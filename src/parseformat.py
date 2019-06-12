@@ -1,6 +1,7 @@
 import json
 
 PARAMS = "euphstflmd"
+PARAMS_EXTENDED = ["email", "username", "password", "hash", "salt", "hashtype", "firstname", "lastname", "phone", "dumpsource"]
 JUNK_PARAM = 'J'
 
 class ParseFormat(object):
@@ -11,6 +12,7 @@ class ParseFormat(object):
         self.delimiter = formatDict.get("delimiter", "").encode()
         self.lineDelimiter = formatDict.get("linedelimiter", "").encode()
         self.format = formatDict.get("parseformat", "").encode()
+        self.formatExtended = [PARAMS_EXTENDED[PARAMS.find(c)] if PARAMS.find(c) != -1 else "junk" for c in self.format.decode()]
 
     def toJSON(self):
         data = {

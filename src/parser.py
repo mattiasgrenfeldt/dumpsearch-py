@@ -3,7 +3,7 @@ import os.path as path
 import parseformat
 
 class Parser(object):
-    EMAIL_REGEX = b"[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
+    EMAIL_REGEX = "[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
 
     def __init__(self, parseFormat, exporter):
         self.chunkSize = int(5e6)
@@ -31,19 +31,17 @@ class Parser(object):
 
         emailError = False
         lineError = False
+        fileEmpty = False
+
+        assert all([c in (parseformat.PARAMS + parseformat.JUNK_PARAM) for c in self.parseFormat.format.decode()]), "[ERROR] Unknown parse parameter"
 
         dataEntries = []
-        fmt = self.parseFormat.format
-        dumpName = dumpName.encode()
-        while len(buff) and buffPos != suffixPos:
+        while buffPos < len(buff) and buffPos != suffixPos:
             endOfLinePos = buff.find(self.parseFormat.lineDelimiter, buffPos)
             if endOfLinePos == -1:
                 self.exporter.exportEntries(dataEntries)
-                bar.finish()
                 print("[WARN] Can't find next end of line. Stopping parsing.")
-                file.close()
-                junkFile.close()
-                return False
+                break
 
             line = buff[buffPos:endOfLinePos]
             values = line.split(self.parseFormat.delimiter)
@@ -51,9 +49,10 @@ class Parser(object):
                 lineError = True
                 junkFile.write(b"%s\n" % line)
             else:
-                info = {k:v for (k,v) in zip(self.parseFormat.format.decode(), values)}
-                info['d'] = dumpName
-                if 'e' in info and info['e'] != b'' and re.fullmatch(Parser.EMAIL_REGEX, info['e'].strip()) == None:
+                info = {k:v.decode() for (k,v) in zip(self.parseFormat.formatExtended, values)}
+                info.pop("junk", "")
+                info['dumpsource'] = dumpName
+                if 'email' in info and info['email'] != '' and re.fullmatch(Parser.EMAIL_REGEX, info['email'].strip()) == None:
                     emailError = True
                     junkFile.write(b"%s\n" % line)
                 else:
@@ -61,12 +60,15 @@ class Parser(object):
 
             buffPos = endOfLinePos + len(self.parseFormat.lineDelimiter)
 
-            if len(buff) - buffPos < self.refillThreshold:
+            if not fileEmpty and len(buff) - buffPos < self.refillThreshold:
                 self.exporter.exportEntries(dataEntries)
                 dataEntries = []
                 barCounter += buffPos
                 bar.update(barCounter)
-                buff = buff[buffPos:] + self.readChunk(file)
+                nextChunk = self.readChunk(file)
+                if len(nextChunk) == 0:
+                    fileEmpty = True
+                buff = buff[buffPos:] + nextChunk
                 buffPos = 0
                 suffixPos = buff.find(suffixJunk)
         
@@ -82,7 +84,7 @@ class Parser(object):
             print("[WARN] Line errors occured, check junk file.")
         if emailError:
             print("[WARN] Some emails didn't look like emails, check junk file.")
-        return True
+        return not (emailError or lineError)
 
     def parseFolder(self, folderName, dumpName, junkFolder, ext='.txt'):
         files = os.listdir(folderName)
@@ -94,5 +96,5 @@ class Parser(object):
             if not self.parseFile(path.join(folderName, f), dumpName, junkFolder):
                 errorFiles.append(f)
         if len(errorFiles):
-            print("[ERROR] Problems were found while parsing the following files:")
+            print("[ERROR] Problems were found while parsing the following %d files:" % len(errorFiles))
             print(errorFiles)
