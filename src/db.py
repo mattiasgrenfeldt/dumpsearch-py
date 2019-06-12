@@ -13,6 +13,9 @@ class DBConnection(exporter.Exporter):
         self.db = self.client["dumpsearch"]
         self.collection = self.db["data"]
 
+    def search():
+        pass
+
     def buildIndexes(self):
         pass
 

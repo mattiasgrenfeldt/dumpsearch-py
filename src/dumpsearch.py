@@ -60,12 +60,25 @@ def guess():
     print("Guess:")
     print('\n'.join(["%s: %s" % (k, repr(v)) for (k,v) in data.items()]))
 
+def search():
+    parser = argparse.ArgumentParser(description='Search database.')
+    parser.add_argument('field', help="The field to search. Available:\n\tLIST")
+    parser.add_argument('value', help="The value to search for.")
+    parser.add_argument('-n', default=10, help="The number of results to show.")
+    parser.add_argument('-o', help="File to dump results in.")
+    args = parser.parse_args(sys.argv[2:])
+
+
+    
+
 def main():
-    parser = argparse.ArgumentParser(usage="\nSubcommands:\n\tparse\n\tguess")
+    parser = argparse.ArgumentParser(usage="\nSubcommands:\n\tparse\n\tguess\n\tsearch")
     parser.add_argument('command', help="Subcommand to run.")
     args = parser.parse_args(sys.argv[1:2])
 
-    if args.command == "guess":
+    if args.command == "search":
+        search()
+    elif args.command == "guess":
         guess()
     elif args.command == "parse":
         parse()
