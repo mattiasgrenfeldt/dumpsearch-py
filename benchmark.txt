@@ -1,0 +1,26 @@
+
+time ./src/dumpsearch.py parse parseformats/test9.json sha1.txt -o outputfile.txt
+
+{
+    "prefixjunk": "",
+    "suffixjunk": "",
+    "delimiter": ":",
+    "linedelimiter": "\r\n",
+    "parseformat": "eh"
+}
+
+15848854 sha1.txt
+15844663 outputfile.txt
+    4191 junk/sha1.txt.junk
+
+3m0.276s cff6a60bb08dc7874efe7be762f1e61d799fd99b
+3m0.142s
+2m37.495s local variables
+2m13.219s compiling regex
+2m17.048s
+
+
+
+
+
+

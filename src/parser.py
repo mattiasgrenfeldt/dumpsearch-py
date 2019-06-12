@@ -2,8 +2,9 @@ import os, progressbar, re
 import os.path as path
 import parseformat
 
+EMAIL_REGEX = re.compile("[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~.]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+")
+
 class Parser(object):
-    EMAIL_REGEX = "[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~.]+@([a-zA-Z0-9-]+[.])+[a-zA-Z0-9-]+"
 
     def __init__(self, parseFormat, exporter):
         self.chunkSize = int(5e6)
@@ -36,32 +37,43 @@ class Parser(object):
         assert all([c in (parseformat.PARAMS + parseformat.JUNK_PARAM) for c in self.parseFormat.format.decode()]), "[ERROR] Unknown parse parameter"
 
         dataEntries = []
+
+        # optimizations
+        lineDelimiter = self.parseFormat.lineDelimiter
+        lineDelimiterLen = len(self.parseFormat.lineDelimiter)
+        exportEntries = self.exporter.exportEntries
+        delimiter = self.parseFormat.delimiter
+        formatExtended = self.parseFormat.formatExtended
+        formatLen = len(self.parseFormat.format)
+        junkWrite = junkFile.write
+        regexFullMatch = EMAIL_REGEX.fullmatch
+
         while buffPos < len(buff) and buffPos != suffixPos:
-            endOfLinePos = buff.find(self.parseFormat.lineDelimiter, buffPos)
+            endOfLinePos = buff.find(lineDelimiter, buffPos)
             if endOfLinePos == -1:
-                self.exporter.exportEntries(dataEntries)
+                exportEntries(dataEntries)
                 print("[WARN] Can't find next end of line. Stopping parsing.")
                 break
 
             line = buff[buffPos:endOfLinePos]
-            values = line.split(self.parseFormat.delimiter)
-            if len(values) != len(self.parseFormat.format):
+            values = line.split(delimiter)
+            if len(values) != formatLen:
                 lineError = True
-                junkFile.write(b"%s\n" % line)
+                junkWrite(b"%s\n" % line)
             else:
-                info = {k:v.decode() for (k,v) in zip(self.parseFormat.formatExtended, values)}
+                info = {k:v.decode() for (k,v) in zip(formatExtended, values)}
                 info.pop("junk", "")
                 info['dumpsource'] = dumpName
-                if 'email' in info and info['email'] != '' and re.fullmatch(Parser.EMAIL_REGEX, info['email'].strip()) == None:
+                if 'email' in info and info['email'] != '' and regexFullMatch(info['email'].strip()) == None:
                     emailError = True
-                    junkFile.write(b"%s\n" % line)
+                    junkWrite(b"%s\n" % line)
                 else:
                     dataEntries.append(info)
 
-            buffPos = endOfLinePos + len(self.parseFormat.lineDelimiter)
+            buffPos = endOfLinePos + lineDelimiterLen
 
             if not fileEmpty and len(buff) - buffPos < self.refillThreshold:
-                self.exporter.exportEntries(dataEntries)
+                exportEntries(dataEntries)
                 dataEntries = []
                 barCounter += buffPos
                 bar.update(barCounter)
@@ -72,7 +84,7 @@ class Parser(object):
                 buffPos = 0
                 suffixPos = buff.find(suffixJunk)
         
-        self.exporter.exportEntries(dataEntries)
+        exportEntries(dataEntries)
         bar.finish()
         file.close()
         if junkFile.tell() == 0:
