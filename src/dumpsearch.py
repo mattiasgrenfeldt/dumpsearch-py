@@ -5,7 +5,7 @@ import parseformat, guesser, exporter, db
 import parser as prs
 
 def parse():
-    parser = argparse.ArgumentParser(description='Parse datadumps.')
+    parser = argparse.ArgumentParser()
     parser.add_argument('formatfile', help="File containing parser format.")
     parser.add_argument('inpath', help="Path to either a file or a folder of files to parse.")
     parser.add_argument('-c', "--config", help="DB config file. Default: dbconfig.json")
@@ -49,7 +49,7 @@ def parse():
     print("[*] Dumpname:", dumpname)
 
 def guess():
-    parser = argparse.ArgumentParser(description='Guess parse format.')
+    parser = argparse.ArgumentParser()
     parser.add_argument('dumpfile', help="Path to dumpfile to analyze.")
     parser.add_argument('-f', default=None, help="File to store format in. Should be .json")
     args = parser.parse_args(sys.argv[2:])   
@@ -61,18 +61,20 @@ def guess():
     print('\n'.join(["%s: %s" % (k, repr(v)) for (k,v) in data.items()]))
 
 def search():
-    parser = argparse.ArgumentParser(description='Search database.')
-    parser.add_argument('field', help="The field to search. Available: email, username, password, hash, salt, hashtype, firstname, lastname, phone, dumpsource.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('field', help="The field to search. Available: %s." % (", ".join(db.FIELDS)))
     parser.add_argument('value', help="The value to search for.")
     parser.add_argument('-c', "--config", default="dbconfig.json", help="DB config file. Default: dbconfig.json")
     parser.add_argument('-n', default="10", help="The number of results to show.")
     parser.add_argument('--offset', default="0", help="The number of entries to skip in beginning of result")
     parser.add_argument('-o', help="File to dump results in.")
+    parser.add_argument('--dont-build-indexes', action="store_true", help="Specify to not build indexes.")
 
     args = parser.parse_args(sys.argv[2:])
 
     database = db.DBConnection(args.config)
-    database.buildIndexes()
+    if not args.dont_build_indexes:
+        database.buildIndexes()
 
     n = int(args.n)
     offset = int(args.offset)
