@@ -15,20 +15,22 @@ class Parser(object):
     def readChunk(self, file):
         return file.read(self.chunkSize)
 
-    def parseFile(self, fileName, dumpName, junkFolder):
-        print("[*] Parsing: %s" % fileName)
+    def parseFile(self, fileName, dumpName, junkFolder, doProgBar=True):
         file = open(fileName, "rb")
         junkFileName = "%s.junk" % path.join(junkFolder, path.basename(path.abspath(fileName)))
         junkFile = open(junkFileName, "wb")
-        fileSize = os.stat(fileName).st_size
-        bar = progressbar.ProgressBar(max_value=fileSize)
-        barCounter = 0
+        
+        if doProgBar:
+            print("[*] Parsing: %s" % fileName)
+            barCounter = 0
+            fileSize = os.stat(fileName).st_size
+            bar = progressbar.ProgressBar(max_value=fileSize)
 
         buff = self.readChunk(file)
 
         buffPos = buff.find(self.parseFormat.prefixJunk) + len(self.parseFormat.prefixJunk)
         suffixJunk = self.parseFormat.suffixJunk if self.parseFormat.suffixJunk != b"" else b"\x00"*10
-        suffixPos = buff.find(suffixJunk, buffPos)
+        suffixPos = buff.rfind(suffixJunk, buffPos)
 
         emailError = False
         lineError = False
@@ -50,10 +52,7 @@ class Parser(object):
 
         while buffPos < len(buff) and buffPos != suffixPos:
             endOfLinePos = buff.find(lineDelimiter, buffPos)
-            if endOfLinePos == -1:
-                exportEntries(dataEntries)
-                print("[WARN] Can't find next end of line. Stopping parsing.")
-                break
+            endOfLinePos = endOfLinePos if endOfLinePos != -1 else len(buff)
 
             line = buff[buffPos:endOfLinePos]
             values = line.split(delimiter)
@@ -75,17 +74,19 @@ class Parser(object):
             if not fileEmpty and len(buff) - buffPos < self.refillThreshold:
                 exportEntries(dataEntries)
                 dataEntries = []
-                barCounter += buffPos
-                bar.update(barCounter)
+                if doProgBar:
+                    barCounter += buffPos
+                    bar.update(barCounter)
                 nextChunk = self.readChunk(file)
                 if len(nextChunk) == 0:
                     fileEmpty = True
                 buff = buff[buffPos:] + nextChunk
                 buffPos = 0
-                suffixPos = buff.find(suffixJunk)
+                suffixPos = buff.rfind(suffixJunk)
         
         exportEntries(dataEntries)
-        bar.finish()
+        if doProgBar:
+            bar.finish()
         file.close()
         if junkFile.tell() == 0:
             junkFile.close()
@@ -101,12 +102,15 @@ class Parser(object):
     def parseFolder(self, folderName, dumpName, junkFolder, ext='.txt'):
         files = os.listdir(folderName)
         files = [f for f in files if f.endswith(ext)]
+
         print("[*] Parsing %d files." % len(files))
+        bar = progressbar.ProgressBar(max_value=len(files))
         errorFiles = []
         for (i,f) in enumerate(files):
-            print("[*] File %d of %d." % (i, len(files)))
-            if not self.parseFile(path.join(folderName, f), dumpName, junkFolder):
+            bar.update(i)
+            if not self.parseFile(path.join(folderName, f), dumpName, junkFolder, False):
                 errorFiles.append(f)
+        bar.finish()
         if len(errorFiles):
             print("[ERROR] Problems were found while parsing the following %d files:" % len(errorFiles))
             print(errorFiles)
