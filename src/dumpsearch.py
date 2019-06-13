@@ -91,21 +91,17 @@ def search():
             for i in range(len(res)):
                 res[i].pop("_id")
             f.write(json.dumps(res).encode())
-    else:
+    elif res[0] != 0:
         res = list(res[1])
-        nRes = len(res)
-        colwidth = [max([len(res[i][field]) if field in res[i] else 0 for i in range(nRes)]) for field in parseformat.PARAMS_EXTENDED]
-        columns = []
-        for (width, field) in zip(colwidth, parseformat.PARAMS_EXTENDED):
-            if width != 0:
-                columns.append((max(width, len(field)), field))
+        colwidth = [max([len(res[i][field]) if field in res[i] else 0 for i in range(len(res))]) for field in parseformat.PARAMS_EXTENDED]
+        columns = [(max(width, len(field)), field) for (width, field) in zip(colwidth, parseformat.PARAMS_EXTENDED) if width != 0]
 
         print("[*] Showing result[%d:%d]" % (offset, offset + n))
         print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
         print("| " + " | ".join([col.ljust(width) for (width, col) in columns]) + " |")
         print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
         for r in res:
-            print("| " + " | ".join([r[col].ljust(width) for (width, col) in columns]) + " |")
+            print("| " + " | ".join([r.get(col, "").ljust(width) for (width, col) in columns]) + " |")
         print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
         print("[*] Showing result[%d:%d]" % (offset, offset + n))
 

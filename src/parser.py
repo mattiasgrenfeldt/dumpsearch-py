@@ -60,13 +60,13 @@ class Parser(object):
                 lineError = True
                 junkWrite(b"%s\n" % line)
             else:
-                info = {k:v.decode() for (k,v) in zip(formatExtended, values)}
-                info.pop("junk", "")
-                info['dumpsource'] = dumpName
-                if 'email' in info and info['email'] != '' and regexFullMatch(info['email'].strip()) == None:
+                info = {k:v.decode() for (k,v) in zip(formatExtended, values) if v != b"" and len(v) < 500} # Mongodb won't index fields larger than 1024
+                if 'email' in info and regexFullMatch(info['email'].strip()) == None:
                     emailError = True
                     junkWrite(b"%s\n" % line)
                 else:
+                    info.pop("junk", "")
+                    info['dumpsource'] = dumpName
                     dataEntries.append(info)
 
             buffPos = endOfLinePos + lineDelimiterLen

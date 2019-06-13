@@ -1,6 +1,7 @@
 import json, pymongo
 import exporter
 
+# Add emailprefix and emaildomain
 FIELDS = ["email", "username", "password", "hash", "firstname", "lastname", "phone", "dumpsource"]
 
 class DBConnection(exporter.Exporter):
@@ -21,11 +22,13 @@ class DBConnection(exporter.Exporter):
             print("[ERROR] Unknown search field %s" % field)
             return (0, [])
         nDocs = self.collection.count_documents({field: value}, limit=int(1e5))
+        if nDocs == 0:
+            return (0, [])
         res = self.collection.find({field: value})
         return (nDocs, res[offset:offset + n])
 
     def buildIndexes(self):
-        print("[*] Building DB indexes. This might take a long time if they haven't been built yet.")
+        print("[*] Building DB indexes. This will take a long time if they haven't been built yet. Go get a coffee.")
         indexSizes = self.db.command("collStats", self.collectionName)["indexSizes"]
         for f in FIELDS:
             if f + "_1" not in indexSizes:
@@ -33,13 +36,12 @@ class DBConnection(exporter.Exporter):
                 self.collection.create_index(f, partialFilterExpression={f:{"$exists": True}})
 
     def deleteIndexes(self):
-        pass
+        self.collection.drop_indexes()
 
     def exportEntry(self, entry):
         self.collection.insert_one(entry)
 
     def exportEntries(self, entryList):
-        if not len(entryList):
-            return
-        self.collection.insert_many(entryList)
+        if len(entryList):
+            self.collection.insert_many(entryList)
         
