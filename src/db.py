@@ -17,14 +17,20 @@ class DBConnection(exporter.Exporter):
         self.collectionName = "data"
         self.collection = self.db[self.collectionName]
 
-    def search(self, field, value, n=1, offset=0):
+    def search(self, field, value, n=1, offset=0, useRegex=False, useJson=False):
         if field not in FIELDS:
             print("[ERROR] Unknown search field %s" % field)
             return (0, [])
-        nDocs = self.collection.count_documents({field: value}, limit=int(1e5))
+        searchObject = {field: value}
+        if useRegex:
+            searchObject = {field: {"$regex": value}}
+        elif useJson:
+            print(value)
+            searchObject = json.loads(value)
+        nDocs = self.collection.count_documents(searchObject, limit=int(1e5))
         if nDocs == 0:
             return (0, [])
-        res = self.collection.find({field: value})
+        res = self.collection.find(searchObject)
         return (nDocs, res[offset:offset + n])
 
     def buildIndexes(self):

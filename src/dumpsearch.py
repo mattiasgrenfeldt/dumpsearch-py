@@ -69,8 +69,15 @@ def search():
     parser.add_argument('--offset', default="0", help="The number of entries to skip in beginning of result")
     parser.add_argument('-o', help="File to dump results in.")
     parser.add_argument('--dont-build-indexes', action="store_true", help="Specify to not build indexes.")
+    
+    parser.add_argument('-r', '--regex', action="store_true", help="Value is a regex string to search with. Prefix searches with ^ will be fast and the rest is slow.")
+    parser.add_argument('-j', '--json', action="store_true", help="Field doesn't matter. Value is a json MongoDB search object. For more advanced searches. Will be slow.")
 
     args = parser.parse_args(sys.argv[2:])
+
+    if args.regex and args.json:
+        print("[ERROR] Only one of --regex and --json can be specified.")
+        sys.exit(1)
 
     database = db.DBConnection(args.config)
     if not args.dont_build_indexes:
@@ -79,7 +86,7 @@ def search():
     n = int(args.n)
     offset = int(args.offset)
 
-    res = database.search(args.field, args.value, n, offset)
+    res = database.search(args.field, args.value, n, offset, args.regex, args.json)
 
     print()
     if res[0] == int(1e5):
@@ -98,13 +105,14 @@ def search():
         colwidth = [max([len(res[i][field]) if field in res[i] else 0 for i in range(len(res))]) for field in parseformat.PARAMS_EXTENDED]
         columns = [(max(width, len(field)), field) for (width, field) in zip(colwidth, parseformat.PARAMS_EXTENDED) if width != 0]
 
+        horizontalBorder = "+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+"
         print("[*] Showing result[%d:%d]" % (offset, offset + n))
-        print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
+        print(horizontalBorder)
         print("| " + " | ".join([col.ljust(width) for (width, col) in columns]) + " |")
-        print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
+        print(horizontalBorder)
         for r in res:
             print("| " + " | ".join([r.get(col, "").ljust(width) for (width, col) in columns]) + " |")
-        print("+-" + "-+-".join(["-"*width for (width, _) in columns]) + "-+")
+        print(horizontalBorder)
         print("[*] Showing result[%d:%d]" % (offset, offset + n))
 
 def main():
