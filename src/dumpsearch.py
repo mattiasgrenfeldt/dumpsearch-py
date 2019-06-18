@@ -62,7 +62,7 @@ def guess():
 
 def search():
     parser = argparse.ArgumentParser()
-    parser.add_argument('field', help="The field to search. Available: %s." % (", ".join(db.FIELDS)))
+    parser.add_argument('field', help="The field to search. Available: %s." % (", ".join(db.SEARCHABLE_FIELDS)))
     parser.add_argument('value', help="The value to search for.")
     parser.add_argument('-c', "--config", default="dbconfig.json", help="DB config file. Default: dbconfig.json")
     parser.add_argument('-n', default="10", help="The number of results to show.")

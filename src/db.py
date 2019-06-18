@@ -2,7 +2,7 @@ import json, pymongo
 import exporter
 
 # Add emailprefix and emaildomain
-FIELDS = ["email", "username", "password", "hash", "firstname", "lastname", "phone", "dumpsource"]
+SEARCHABLE_FIELDS = ["email", "domain", "username", "password", "hash", "firstname", "lastname", "phone", "dumpsource"]
 
 class DBConnection(exporter.Exporter):
 
@@ -18,7 +18,7 @@ class DBConnection(exporter.Exporter):
         self.collection = self.db[self.collectionName]
 
     def search(self, field, value, n=1, offset=0, useRegex=False, useJson=False):
-        if field not in FIELDS:
+        if field not in SEARCHABLE_FIELDS:
             print("[ERROR] Unknown search field %s" % field)
             return (0, [])
         searchObject = {field: value}

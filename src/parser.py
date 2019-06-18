@@ -67,6 +67,9 @@ class Parser(object):
                 else:
                     info.pop("junk", "")
                     info['dumpsource'] = dumpName
+                    if 'email' in info:
+                        email = info['email']
+                        info['domain'] = email[email.find("@") + 1:]
                     dataEntries.append(info)
 
             buffPos = endOfLinePos + lineDelimiterLen
