@@ -2,7 +2,7 @@
 import sys, argparse, os, json
 import os.path as path
 import parseformat, guesser, exporter, db
-import parser as prs
+import dumpparser as prs
 
 def parse():
     parser = argparse.ArgumentParser()

@@ -60,17 +60,21 @@ class Parser(object):
                 lineError = True
                 junkWrite(b"%s\n" % line)
             else:
-                info = {k:v.decode() for (k,v) in zip(formatExtended, values) if v != b"" and len(v) < 500} # Mongodb won't index fields larger than 1024
-                if 'email' in info and regexFullMatch(info['email'].strip()) == None:
-                    emailError = True
+                try:
+                    info = {k:v.decode() for (k,v) in zip(formatExtended, values) if v != b"" and len(v) < 500} # Mongodb won't index fields larger than 1024
+                    if 'email' in info and regexFullMatch(info['email'].strip()) == None:
+                        emailError = True
+                        junkWrite(b"%s\n" % line)
+                    else:
+                        info.pop("junk", "")
+                        info['dumpsource'] = dumpName
+                        if 'email' in info:
+                            email = info['email']
+                            info['domain'] = email[email.find("@") + 1:]
+                        dataEntries.append(info)
+                except UnicodeDecodeError as e:
+                    lineError = True
                     junkWrite(b"%s\n" % line)
-                else:
-                    info.pop("junk", "")
-                    info['dumpsource'] = dumpName
-                    if 'email' in info:
-                        email = info['email']
-                        info['domain'] = email[email.find("@") + 1:]
-                    dataEntries.append(info)
 
             buffPos = endOfLinePos + lineDelimiterLen
 
@@ -105,14 +109,18 @@ class Parser(object):
     def parseFolder(self, folderName, dumpName, junkFolder, ext='.txt'):
         files = os.listdir(folderName)
         files = [f for f in files if f.endswith(ext)]
+        fileSizes = [os.stat(path.join(folderName, f)).st_size for f in files]
 
         print("[*] Parsing %d files." % len(files))
-        bar = progressbar.ProgressBar(max_value=len(files))
+        bar = progressbar.ProgressBar(max_value=sum(fileSizes)/1e9)
         errorFiles = []
+        cumSum = 0
+        bar.update(cumSum)
         for (i,f) in enumerate(files):
-            bar.update(i)
             if not self.parseFile(path.join(folderName, f), dumpName, junkFolder, False):
                 errorFiles.append(f)
+            cumSum += fileSizes[i]
+            bar.update(cumSum/1e9)
         bar.finish()
         if len(errorFiles):
             print("[ERROR] Problems were found while parsing the following %d files:" % len(errorFiles))

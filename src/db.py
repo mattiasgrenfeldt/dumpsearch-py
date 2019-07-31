@@ -12,7 +12,7 @@ class DBConnection(exporter.Exporter):
             config = json.loads(f.read())
         config["port"] = config["port"] if "port" in config else 27017
         self.config = config
-        self.client = pymongo.MongoClient(config["ip"], config["port"])
+        self.client = pymongo.MongoClient(config["ip"], config["port"], username=config['username'], password=config['password'])
         self.db = self.client["dumpsearch"]
         self.collectionName = "data"
         self.collection = self.db[self.collectionName]
@@ -36,7 +36,7 @@ class DBConnection(exporter.Exporter):
     def buildIndexes(self):
         print("[*] Building DB indexes. This will take a long time if they haven't been built yet. Go get a coffee.")
         indexSizes = self.db.command("collStats", self.collectionName)["indexSizes"]
-        for f in FIELDS:
+        for f in SEARCHABLE_FIELDS:
             if f + "_1" not in indexSizes:
                 print("Creating index:", f)
                 self.collection.create_index(f, partialFilterExpression={f:{"$exists": True}})
