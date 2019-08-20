@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+	<title>Dumpsearch</title>
+	<style type="text/css">th {text-align: left;}</style>
+</head>
+<body style="height: 100%">
+
+	<h3>Dumpsearch</h3>
+	<p>Search slow? <a href="/indexes">Indexes.</a></p>
+	<p>Search through data leaks here:</p>
+	<form method="GET" action="/">
+		<input type="text" name="query" id="queryInput">
+		<select name="field" id="fieldInput">
+			<!-- Template this somehow -->
+			<option value="email">Email</option>
+			<option value="domain">Domain</option>
+			<option value="username">Username</option>
+			<option value="password">Password</option>
+			<option value="hash">Hash</option>
+			<option value="firstname">First name</option>
+			<option value="lastname">Last name</option>
+			<option value="phone">Phone</option>
+			<option value="dumpsource">Dump source</option>		
+		</select>
+		<br>
+		<label>Limit:</label>
+		<input type="number" name="limit" min="1" style="width: 50px" value="10" id="limitInput">
+		<br>
+		<label>Use regex:</label>
+		<input type="checkbox" name="regex" id="regexInput">
+		<br>
+		<input type="submit" value="Search">
+	</form>
+	<hr>
+	<div style="width: 100%; height: 100%" id="resultView"></div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+	<script>
+		"use strict";
+		const FIELDS = ["email", "username", "password", "hash", "firstname", "lastname", "phone", "dumpsource"];
+		var resultData = {}
+		var displayingAsTable = true;
+
+		function switchView(){
+			if(displayingAsTable){
+				displayResultJSON()
+			} else {
+				displayResultTable()
+			}
+			displayingAsTable = !displayingAsTable
+		}
+
+		$(document).ready(function() {
+			var urlParams = new URLSearchParams(window.location.search)
+			if(urlParams.has("query") && urlParams.has("field")){
+				var query = urlParams.get("query")
+				var field = urlParams.get("field")
+				var useRegex = urlParams.get("regex") === "on" ? true : false
+				var limit = urlParams.get("limit") || "10"
+
+				$("#queryInput").val(query)
+				$("#fieldInput").val(field)
+				$("#limitInput").val(limit)
+				$("#regexInput").prop("checked", useRegex)
+
+				$("#resultView").html("Loading...")
+				search(query, field, useRegex, limit)
+			}
+		})
+
+		function search(query, field, useRegex, limit) {
+			$.ajax({
+				"url": "/search",
+				"type": "GET",
+				"data": {"query": query, "field": field, "regex": useRegex, "limit": limit},
+				"success": function(data) {
+					$("#resultView").html('<input onclick=switchView() id="switcher" type="button" value="Change View (json/table)"><label> Count: </label><span id="resultCount"></span><div style="width: 100%; height: 100%" id="result"></div>')
+					resultData = data
+					$("#resultCount").html(data["result"].length)
+					displayingAsTable = true
+					displayResultTable()
+				}
+			})
+		}
+
+		function displayResultTable() {
+			var table = document.createElement("table")
+			var firstRow = document.createElement("tr")
+			for(var field of FIELDS) {
+				var t = document.createElement("th")
+				t.innerHTML = field
+				firstRow.appendChild(t)
+			}
+			table.appendChild(firstRow)
+
+			for(var item of resultData["result"]) {
+				var tr = document.createElement("tr")
+				for(var field of FIELDS) {
+					var t = document.createElement("td")
+					t.innerHTML = item[field] || ""
+					tr.appendChild(t)
+				}
+				table.appendChild(tr)
+			}
+
+			$("#result").html("")
+			$("#result").append(table)
+		}
+
+		function displayResultJSON() {
+			$("#result").html('<textarea style="height: 90%;width: 90%;" id="resultJSON" disabled></textarea>')
+			$("#resultJSON").html(JSON.stringify(resultData, null, 2))
+		}
+	</script>
+</body>
+</html>
